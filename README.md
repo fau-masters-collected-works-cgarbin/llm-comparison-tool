@@ -54,7 +54,3 @@ OPENROUTER_API_KEY=<your key>
 ```
 
 It is safe to add the key here. It will never be committed to the repository.
-
-## Related projects
-
-[This project](https://github.com/fau-masters-collected-works-cgarbin/gpt-all-local) shows how to run a local model.
