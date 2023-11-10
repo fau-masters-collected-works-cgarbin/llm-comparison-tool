@@ -1,4 +1,6 @@
-
+openai ~= 1.2
+python-dotenv ~= 1.0
+requests ~= 2.31
 
 # Tools - use the latest
 ruff
