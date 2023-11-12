@@ -8,8 +8,8 @@ The main steps to use OpenRouter are:
 2. Add the key to the request: "Authorization": `Bearer ${OPENROUTER_API_KEY}`
 3. Understand prompt transformation: https://openrouter.ai/docs#transforms
 
-We use the OpenAI SDK with OpenRouter, as described at https://github.com/alexanderatallah/openrouter-streamlit. It
-takes care of some of the steos above.
+Although OpenRouter suports the OpenAI Python client we use an HTTP request to understand the API better and to
+have more control over the request.
 """
 import os
 import time
@@ -123,11 +123,7 @@ def cost_and_stats(response: LLMResponse) -> LLMCostAndStats:
 
 
 def chat_completion(model: str, prompt: str, user_input: str) -> LLMResponse:
-    """Get a chat completion from the specified model.
-
-    Although OpenRouter suports the OpenAI Python client we use an HTTP request to understand the API better and to
-    have more control over the request.
-    """
+    """Get a chat completion from the specified model."""
     # TODO: add temperature
     payload = {
         "model": model,
