@@ -99,8 +99,8 @@ def _get_openai_client() -> OpenAI:
     )
 
 
-def _cost_and_stats(response: LLMResponse) -> LLMCostAndStats:
-    """Retrieve costs and stats for the request identified by id."""
+def cost_and_stats(response: LLMResponse) -> LLMCostAndStats:
+    """Retrieve costs and stats for the LLM response."""
 
     # Always get the API key from the environment in case it changed
     headers = {
@@ -175,7 +175,7 @@ def _test():
         "You are a helpful assistant and an expert in MATLAB.",
         "What is the latest matlab version?",
     )
-    cost_stats = _cost_and_stats(response)
+    cost_stats = cost_and_stats(response)
 
     print(f"Response:\n{response}")
     print(f"\nCost and stats:\n{cost_stats}")
