@@ -31,24 +31,45 @@ class LLMResponse:
     We use our class instead of returning the native LLM response to make it easier to adapt to different LLMs later.
     """
 
+    id: str = ""
     model: str = ""
     prompt: str = ""
     user_input: str = ""
-    llm_response: str = ""
-    input_tokens: int = 0
-    output_tokens: int = 0
+    response: str = ""
+
+    raw_response: dict = field(default_factory=dict)
+    elapsed_time: float = 0.0
+
+
+@dataclass
+class LLMCostAndStats:
+    """Class to hold the LLM cost and stats.
+
+    We use our class instead of returning the native LLM response to make it easier to adapt to different LLMs later.
+    """
+
+    id: str = ""  # Should match the request ID - we store to correlate the response and the cost/stats
+
+    # It's not clear what the differences between tokens_ and natives_tokens_ are
+    # According to this post https://twitter.com/OpenRouterAI/status/1704862401022009773, it seems that tokens_ is
+    # calculated with the GPT tokenizer and native_tokens_ is calculated with the native tokenizer for the model
+    # We will make that assumption and name the fields accordingly
+    gpt_tokens_prompt: int = 0
+    gpt_tokens_completion: int = 0
+    native_tokens_prompt: int = 0
+    native_tokens_completion: int = 0
     cost: float = 0.0
 
     raw_response: dict = field(default_factory=dict)
-    elapsed_time_response: float = 0.0
-
-    raw_cost_and_stats: dict = field(default_factory=dict)
-    elapsed_time_cost: float = 0.0
+    elapsed_time: float = 0.0
 
     @property
-    def total_tokens(self):
-        """Calculate the total number of tokens used."""
-        return self.input_tokens + self.output_tokens
+    def gpt_tokens_total(self):
+        return self.gpt_tokens_prompt + self.gpt_tokens_completion
+
+    @property
+    def native_tokens_total(self):
+        return self.native_tokens_prompt + self.native_tokens_completion
 
 
 def _get_api_key() -> str:
@@ -78,17 +99,8 @@ def _get_openai_client() -> OpenAI:
     )
 
 
-def _cost_and_stats(request_id: str) -> dict:
-    """Retrieve costs and stats for the request identified by id.
-
-    Args:
-        id: The id from a completed OpenRouter request.
-
-    Returns:
-        A dictionary with the costs and stats for the request.
-    """
-    # Prepare the request
-    start_time = time.time()
+def _cost_and_stats(response: LLMResponse) -> LLMCostAndStats:
+    """Retrieve costs and stats for the request identified by id."""
 
     # Always get the API key from the environment in case it changed
     headers = {
@@ -100,21 +112,27 @@ def _cost_and_stats(request_id: str) -> dict:
     #   - The default configuration allows up to 10 simultaneous connections to the same host, which should be enough
     #     for our needs.
     #   - We use a large timeout because some LLMs take a long time to respond.
-    http_response = requests.get(f"{_OPENROUTER_API}/generation?id={request_id}", headers=headers, timeout=120)
+    start_time = time.time()
+    http_response = requests.get(f"{_OPENROUTER_API}/generation?id={response.id}", headers=headers, timeout=120)
+    response_time = time.time() - start_time
     # We let exceptions propagate for now because this is a developement tool
     # When/if we let end users (or less technical users) use this code, we handle exceptions more gracefully
     # Note that the exception will stop the parallel execution of the LLMs, which is ok in our case
     http_response.raise_for_status()
 
-    response_time = time.time() - start_time
+    payload = http_response.json()["data"]
 
-    # Build a response object that contains the request and response so we easily track the request/response pairs
-    response = {
-        "time": response_time,
-        "server_response": http_response.text,
-    }
+    cost_stats = LLMCostAndStats()
+    cost_stats.elapsed_time = response_time
+    cost_stats.id = response.id
+    cost_stats.gpt_tokens_prompt = payload["tokens_prompt"]
+    cost_stats.gpt_tokens_completion = payload["tokens_completion"]
+    cost_stats.native_tokens_prompt = payload["native_tokens_prompt"]
+    cost_stats.native_tokens_completion = payload["native_tokens_completion"]
+    cost_stats.cost = payload["usage"]
+    cost_stats.raw_response = payload
 
-    return response
+    return cost_stats
 
 
 def chat_completion(model: str, prompt: str, user_input: str) -> LLMResponse:
@@ -135,27 +153,17 @@ def chat_completion(model: str, prompt: str, user_input: str) -> LLMResponse:
 
     # Record the request and the response
     response = LLMResponse()
-    response.elapsed_time_response = elapsed_time
+    response.elapsed_time = elapsed_time
+    response.id = completion.id
     response.model = model
     response.prompt = prompt
     response.user_input = user_input
-    response.llm_response = completion.choices[0].message.content or ""
+    response.response = completion.choices[0].message.content or ""
 
     # This is not exactly the raw response, but it's close enough
     # It assumes the completion object is a pydantic.BaseModel class, which has the `dict()`
     # method we need here
     response.raw_response = completion.model_dump()
-
-    stats = _cost_and_stats(completion.id)
-    response.raw_cost_and_stats = stats
-    response.elapsed_time_cost = stats["time"]
-
-    # Record the number of tokens used for input and output
-    response.input_tokens = 0  # TODO
-    response.output_tokens = 0  # TODO
-
-    # Records costs (depends on the tokens and model - set them first)
-    # response.cost = _cost()
 
     return response
 
@@ -167,7 +175,10 @@ def _test():
         "You are a helpful assistant and an expert in MATLAB.",
         "What is the latest matlab version?",
     )
-    print(response)
+    cost_stats = _cost_and_stats(response)
+
+    print(f"Response:\n{response}")
+    print(f"\nCost and stats:\n{cost_stats}")
 
 
 if __name__ == "__main__":
