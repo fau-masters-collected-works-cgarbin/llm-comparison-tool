@@ -18,10 +18,10 @@ from dataclasses import field
 
 import dotenv
 import requests
-from openai import OpenAI
 
 
 _OPENROUTER_API = "https://openrouter.ai/api/v1"
+_REFERER = "http://localhost:3000"
 
 
 @dataclass
@@ -86,19 +86,6 @@ def _get_api_key() -> str:
     return api_key
 
 
-def _get_openai_client() -> OpenAI:
-    """Get a client for OpenAI."""
-    # Instantiate a new client but point it to the OpenRouter API
-    # OpenRouter is compatible with the OpenAI API
-    return OpenAI(
-        api_key=_get_api_key(),
-        base_url=_OPENROUTER_API,
-        # Headers required by OpenRouter
-        # See https://openrouter.ai/docs#quick-start
-        default_headers={"HTTP-Referer": "http://localhost:3000"},
-    )
-
-
 def cost_and_stats(response: LLMResponse) -> LLMCostAndStats:
     """Retrieve costs and stats for the LLM response."""
 
@@ -136,34 +123,50 @@ def cost_and_stats(response: LLMResponse) -> LLMCostAndStats:
 
 
 def chat_completion(model: str, prompt: str, user_input: str) -> LLMResponse:
-    """Get a chat completion from the specified model."""
-    # Always instantiate a new client to pick up configuration changes without restarting the program
-    client = _get_openai_client()
+    """Get a chat completion from the specified model.
 
-    start_time = time.time()
-    completion = client.chat.completions.create(
-        model=model,
-        messages=[
+    Although OpenRouter suports the OpenAI Python client we use an HTTP request to understand the API better and to
+    have more control over the request.
+    """
+    # TODO: add temperature
+    payload = {
+        "model": model,
+        "messages": [
             {"role": "system", "content": prompt},
             {"role": "user", "content": user_input},
         ],
-        temperature=0.0,  # We want precise and repeatable results
-    )
+    }
+
+    headers = {
+        # Always get the API key from the environment in case it changed
+        "Authorization": f"Bearer {_get_api_key()}",
+        "HTTP-Referer": _REFERER,
+    }
+
+    url = f"{_OPENROUTER_API}/chat/completions"
+
+    start_time = time.time()
+    http_response = requests.post(url=url, json=payload, headers=headers, timeout=120)
     elapsed_time = time.time() - start_time
+    # We let exceptions propagate for now because this is a developement tool
+    # When/if we let end users (or less technical users) use this code, we handle exceptions more gracefully
+    # Note that the exception will stop the parallel execution of the LLMs, which is ok in our case
+    http_response.raise_for_status()
+
+    payload = http_response.json()
 
     # Record the request and the response
+    # We use the keys without checking if they exist because we want to know if the API changes (it will result
+    # in a hard failure that makes the change obvious)
     response = LLMResponse()
     response.elapsed_time = elapsed_time
-    response.id = completion.id
+    response.id = payload["id"]
     response.model = model
     response.prompt = prompt
     response.user_input = user_input
-    response.response = completion.choices[0].message.content or ""
+    response.response = payload["choices"][0]["message"]["content"]
 
-    # This is not exactly the raw response, but it's close enough
-    # It assumes the completion object is a pydantic.BaseModel class, which has the `dict()`
-    # method we need here
-    response.raw_response = completion.model_dump()
+    response.raw_response = payload
 
     return response
 
@@ -175,9 +178,9 @@ def _test():
         "You are a helpful assistant and an expert in MATLAB.",
         "What is the latest matlab version?",
     )
-    cost_stats = cost_and_stats(response)
-
     print(f"Response:\n{response}")
+
+    cost_stats = cost_and_stats(response)
     print(f"\nCost and stats:\n{cost_stats}")
 
 
