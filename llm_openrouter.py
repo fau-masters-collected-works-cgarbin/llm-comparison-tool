@@ -122,15 +122,15 @@ def cost_and_stats(response: LLMResponse) -> LLMCostAndStats:
     return cost_stats
 
 
-def chat_completion(model: str, prompt: str, user_input: str) -> LLMResponse:
+def chat_completion(model: str, prompt: str, user_input: str, temperature: float = 0.0) -> LLMResponse:
     """Get a chat completion from the specified model."""
-    # TODO: add temperature
     payload = {
         "model": model,
         "messages": [
             {"role": "system", "content": prompt},
             {"role": "user", "content": user_input},
         ],
+        "temperature": temperature,
     }
 
     headers = {
