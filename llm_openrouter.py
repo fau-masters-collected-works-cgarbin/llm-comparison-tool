@@ -11,10 +11,10 @@ The main steps to use OpenRouter are:
 We use the OpenAI SDK with OpenRouter, as described at https://github.com/alexanderatallah/openrouter-streamlit. It
 takes care of some of the steos above.
 """
-from dataclasses import dataclass
 import os
 import time
-from typing import Optional
+from dataclasses import dataclass
+
 import dotenv
 from openai import OpenAI
 
@@ -26,15 +26,15 @@ class LLMResponse:
     We use our class instead of returning the native LLM response to make it easier to adapt to different LLMs later.
     """
 
-    model: Optional[str] = None
-    prompt: Optional[str] = None
-    user_input: Optional[str] = None
-    llm_response: Optional[str] = None
-    input_tokens: Optional[int] = None
-    output_tokens: Optional[int] = None
-    cost: Optional[float] = None
-    raw_response: Optional[dict] = None
-    elapsed_time: Optional[float] = None
+    model: str = ""
+    prompt: str = ""
+    user_input: str = ""
+    llm_response: str = ""
+    input_tokens: int = 0
+    output_tokens: int = 0
+    cost: float = 0.0
+    raw_response: dict = {}
+    elapsed_time: float = 0.0
 
     @property
     def total_tokens(self):
@@ -42,7 +42,7 @@ class LLMResponse:
         return self.input_tokens + self.output_tokens
 
 
-def _get_openai_client() -> None:
+def _get_openai_client() -> OpenAI:
     """Get a client for OpenAI."""
     # Try an OpenAI key, fall back to OpenRouter key if not found
     dotenv.load_dotenv()
@@ -91,8 +91,7 @@ def chat_completion(model: str, prompt: str, user_input: str) -> LLMResponse:
     response.model = model
     response.prompt = prompt
     response.user_input = user_input
-    print(completion)
-    response.llm_response = completion.choices[0].message.content
+    response.llm_response = completion.choices[0].message.content or ""
 
     # This is not exactly the raw response, but it's close enough
     # It assumes the completion object is a pydantic.BaseModel class, which has the `dict()`
