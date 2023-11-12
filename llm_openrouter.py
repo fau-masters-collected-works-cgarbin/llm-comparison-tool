@@ -14,9 +14,14 @@ takes care of some of the steos above.
 import os
 import time
 from dataclasses import dataclass
+from dataclasses import field
 
 import dotenv
+import requests
 from openai import OpenAI
+
+
+_OPENROUTER_API = "https://openrouter.ai/api/v1"
 
 
 @dataclass
@@ -33,8 +38,12 @@ class LLMResponse:
     input_tokens: int = 0
     output_tokens: int = 0
     cost: float = 0.0
-    raw_response: dict = {}
-    elapsed_time: float = 0.0
+
+    raw_response: dict = field(default_factory=dict)
+    elapsed_time_response: float = 0.0
+
+    raw_cost_and_stats: dict = field(default_factory=dict)
+    elapsed_time_cost: float = 0.0
 
     @property
     def total_tokens(self):
@@ -42,8 +51,8 @@ class LLMResponse:
         return self.input_tokens + self.output_tokens
 
 
-def _get_openai_client() -> OpenAI:
-    """Get a client for OpenAI."""
+def _get_api_key() -> str:
+    """Get the API key from the environment."""
     # Try an OpenAI key, fall back to OpenRouter key if not found
     dotenv.load_dotenv()
     api_key = os.getenv("OPENAI_API_KEY")
@@ -53,20 +62,59 @@ def _get_openai_client() -> OpenAI:
     if not api_key:
         raise EnvironmentError("API key environment variable not set -- see README.md for instructions")
 
+    return api_key
+
+
+def _get_openai_client() -> OpenAI:
+    """Get a client for OpenAI."""
     # Instantiate a new client but point it to the OpenRouter API
     # OpenRouter is compatible with the OpenAI API
     return OpenAI(
-        api_key=api_key,
-        base_url="https://openrouter.ai/api/v1",
+        api_key=_get_api_key(),
+        base_url=_OPENROUTER_API,
         # Headers required by OpenRouter
         # See https://openrouter.ai/docs#quick-start
         default_headers={"HTTP-Referer": "http://localhost:3000"},
     )
 
 
-def _cost() -> float:
-    """Calculate the cost of the completion."""
-    return 0
+def _cost_and_stats(request_id: str) -> dict:
+    """Retrieve costs and stats for the request identified by id.
+
+    Args:
+        id: The id from a completed OpenRouter request.
+
+    Returns:
+        A dictionary with the costs and stats for the request.
+    """
+    # Prepare the request
+    start_time = time.time()
+
+    # Always get the API key from the environment in case it changed
+    headers = {
+        "Authorization": f"Bearer {_get_api_key()}",
+    }
+
+    # Implementation notes:
+    #   - We let `requests` manage the connection pool for us.
+    #   - The default configuration allows up to 10 simultaneous connections to the same host, which should be enough
+    #     for our needs.
+    #   - We use a large timeout because some LLMs take a long time to respond.
+    http_response = requests.get(f"{_OPENROUTER_API}/generation?id={request_id}", headers=headers, timeout=120)
+    # We let exceptions propagate for now because this is a developement tool
+    # When/if we let end users (or less technical users) use this code, we handle exceptions more gracefully
+    # Note that the exception will stop the parallel execution of the LLMs, which is ok in our case
+    http_response.raise_for_status()
+
+    response_time = time.time() - start_time
+
+    # Build a response object that contains the request and response so we easily track the request/response pairs
+    response = {
+        "time": response_time,
+        "server_response": http_response.text,
+    }
+
+    return response
 
 
 def chat_completion(model: str, prompt: str, user_input: str) -> LLMResponse:
@@ -87,7 +135,7 @@ def chat_completion(model: str, prompt: str, user_input: str) -> LLMResponse:
 
     # Record the request and the response
     response = LLMResponse()
-    response.elapsed_time = elapsed_time
+    response.elapsed_time_response = elapsed_time
     response.model = model
     response.prompt = prompt
     response.user_input = user_input
@@ -98,12 +146,16 @@ def chat_completion(model: str, prompt: str, user_input: str) -> LLMResponse:
     # method we need here
     response.raw_response = completion.model_dump()
 
+    stats = _cost_and_stats(completion.id)
+    response.raw_cost_and_stats = stats
+    response.elapsed_time_cost = stats["time"]
+
     # Record the number of tokens used for input and output
     response.input_tokens = 0  # TODO
     response.output_tokens = 0  # TODO
 
     # Records costs (depends on the tokens and model - set them first)
-    response.cost = _cost()
+    # response.cost = _cost()
 
     return response
 
