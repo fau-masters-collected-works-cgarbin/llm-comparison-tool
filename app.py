@@ -19,6 +19,8 @@ def prepare_session_state():
         st.session_state.prompt = ""
     if "temperature" not in st.session_state:
         st.session_state.temperature = 0.0
+    if "max_tokens" not in st.session_state:
+        st.session_state.max_tokens = 2048
     if "models" not in st.session_state:
         st.session_state.models = []
 
@@ -26,9 +28,15 @@ def prepare_session_state():
 def configuration():
     with st.expander("Click to to show/hide configuration options (system prompt, temperature, models)"):
         models = get_models()
-        st.session_state.prompt = st.text_area("System prompt", placeholder="Enter here the system prompt", height=200)
-        st.session_state.temperature = st.slider("Select temperature", 0.0, 2.0, 0.0)
-        st.session_state.models = st.multiselect("Select model(s)", models, placeholder="Select one or more models")
+        st.session_state.prompt = st.text_area("System prompt", placeholder="Enter here the system prompt", height=150)
+        cols = st.columns(3)
+        with cols[0]:
+            st.session_state.models = st.multiselect("Model(s)", models, placeholder="Select one or more models")
+        with cols[1]:
+            st.session_state.temperature = st.slider("Temperature", 0.0, 2.0, 0.0)
+        with cols[2]:
+            st.session_state.max_tokens = st.number_input("Max completion tokens", 1, 20_480, 2048, step=10)
+
         # Order models by name to make them easier to find in the results
         st.session_state.models = sorted(st.session_state.models, key=lambda x: x.name)
 
@@ -64,7 +72,7 @@ def get_llm_response(user_input: str) -> dict[llm.Model, llm.LLMResponse]:
         if not isinstance(models, list):
             models = [models]
         response = llm.chat_completion_multiple(
-            models, st.session_state.prompt, user_input, st.session_state.temperature
+            models, st.session_state.prompt, user_input, st.session_state.temperature, st.session_state.max_tokens
         )
     return response
 

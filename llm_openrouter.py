@@ -170,7 +170,9 @@ def cost_and_stats(response: LLMResponse) -> LLMCostAndStats:
     return cost_stats
 
 
-def chat_completion(model: str, prompt: str, user_input: str, temperature: float = 0.0) -> LLMResponse:
+def chat_completion(
+    model: str, prompt: str, user_input: str, temperature: float = 0.0, max_tokens: int = 2048
+) -> LLMResponse:
     """Get a chat completion from the specified model."""
     payload = {
         "model": model,
@@ -179,7 +181,7 @@ def chat_completion(model: str, prompt: str, user_input: str, temperature: float
             {"role": "user", "content": user_input},
         ],
         "temperature": temperature,
-        "max_tokens": 1024,
+        "max_tokens": max_tokens,
     }
 
     headers = {
@@ -219,12 +221,13 @@ def chat_completion(model: str, prompt: str, user_input: str, temperature: float
 
 
 def chat_completion_multiple(
-    models: list[Model], prompt: str, user_input: str, temperature: float = 0.0
+    models: list[Model], prompt: str, user_input: str, temperature: float = 0.0, max_tokens: int = 2048
 ) -> dict[Model, LLMResponse]:
     """Fetches all LLM results in parallel to complete them as fast as possible."""
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = {
-            executor.submit(chat_completion, model.id, prompt, user_input, temperature): model for model in models
+            executor.submit(chat_completion, model.id, prompt, user_input, temperature, max_tokens): model
+            for model in models
         }
 
         results = {}
