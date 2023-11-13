@@ -59,6 +59,16 @@ def show_response(response: dict[llm.Model, llm.LLMResponse], cost_and_stats: di
                 st.json(r.raw_response, expanded=False)
                 st.write("Cost and stats raw response")
                 st.json(cost_and_stats[m].raw_response, expanded=False)
+            c = cost_and_stats[m]
+            st.markdown(
+                (
+                    "GPT tokens | Native tokens | Cost | Elapsed time |\n"
+                    "| --- | --- | --- | --- |\n"
+                    f"| {c.gpt_tokens_prompt}/{c.gpt_tokens_completion} |"
+                    f"{c.native_tokens_prompt}/{c.native_tokens_completion} |"
+                    f"{c.cost} | {r.elapsed_time:.1f}s |"
+                )
+            )
             st.markdown(r.response)
 
 
@@ -66,7 +76,8 @@ prepare_session_state()
 configuration()
 st.write(f"Selected models: {', '.join([model.name for model in st.session_state.models])}")
 
-user_input = st.text_area("Enter your request to the LLM", height=150)
+user_input = st.text_area("Enter your request", height=100)
+st.error("🛑 Do not enter private or sensitive information. What you type here is going to third party servers.")
 send_button = st.button("Send Request")
 
 if send_button:
