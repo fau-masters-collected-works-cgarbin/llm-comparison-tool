@@ -72,6 +72,20 @@ class LLMCostAndStats:
         return self.native_tokens_prompt + self.native_tokens_completion
 
 
+@dataclass
+class Model:
+    """Class to hold the model information."""
+
+    id: str
+    name: str
+    pricing_prompt: int
+    pricing_completion: int
+    context_length: int
+    max_completion_tokens: int
+    tokenizer: str
+    instruct_type: str
+
+
 def _get_api_key() -> str:
     """Get the API key from the environment."""
     # Try an OpenAI key, fall back to OpenRouter key if not found
@@ -84,6 +98,35 @@ def _get_api_key() -> str:
         raise EnvironmentError("API key environment variable not set -- see README.md for instructions")
 
     return api_key
+
+
+def available_models() -> list[Model]:
+    """Get the list of models."""
+    # https://openrouter.ai/api/v1/models
+    http_response = requests.get(f"{_OPENROUTER_API}/models", timeout=360)
+    http_response.raise_for_status()
+
+    payload = http_response.json()["data"]
+
+    api_data_list = []
+    for item in payload:
+        pricing = item["pricing"]
+        architecture = item["architecture"]
+        top_provider = item["top_provider"]
+
+        api_data = Model(
+            id=item["id"],
+            name=item["name"],
+            pricing_prompt=pricing["prompt"],
+            pricing_completion=pricing["completion"],
+            context_length=item["context_length"],
+            tokenizer=architecture["tokenizer"],
+            instruct_type=architecture["instruct_type"],
+            max_completion_tokens=top_provider["max_completion_tokens"],
+        )
+        api_data_list.append(api_data)
+
+    return api_data_list
 
 
 def cost_and_stats(response: LLMResponse) -> LLMCostAndStats:
@@ -100,7 +143,7 @@ def cost_and_stats(response: LLMResponse) -> LLMCostAndStats:
     #     for our needs.
     #   - We use a large timeout because some LLMs take a long time to respond.
     start_time = time.time()
-    http_response = requests.get(f"{_OPENROUTER_API}/generation?id={response.id}", headers=headers, timeout=120)
+    http_response = requests.get(f"{_OPENROUTER_API}/generation?id={response.id}", headers=headers, timeout=360)
     response_time = time.time() - start_time
     # We let exceptions propagate for now because this is a developement tool
     # When/if we let end users (or less technical users) use this code, we handle exceptions more gracefully
@@ -169,15 +212,18 @@ def chat_completion(model: str, prompt: str, user_input: str, temperature: float
 
 def _test():
     """Test function - add breakpoints and start under the debugger."""
-    response = chat_completion(
-        "mistralai/mistral-7b-instruct",
-        "You are a helpful assistant and an expert in MATLAB.",
-        "What is the latest matlab version?",
-    )
-    print(f"Response:\n{response}")
+    # response = chat_completion(
+    #     "mistralai/mistral-7b-instruct",
+    #     "You are a helpful assistant and an expert in MATLAB.",
+    #     "What is the latest matlab version?",
+    # )
+    # print(f"Response:\n{response}")
 
-    cost_stats = cost_and_stats(response)
-    print(f"\nCost and stats:\n{cost_stats}")
+    # cost_stats = cost_and_stats(response)
+    # print(f"\nCost and stats:\n{cost_stats}")
+
+    models = available_models()
+    print(f"\nModels:\n{models}")
 
 
 if __name__ == "__main__":
