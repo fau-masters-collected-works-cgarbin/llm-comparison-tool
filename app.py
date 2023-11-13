@@ -97,7 +97,7 @@ def show_response(response: dict[llm.Model, llm.LLMResponse], cost_and_stats: di
                     f"{c.cost:.10f} | {r.elapsed_time:.1f}s |"
                 )
             )
-            st.markdown(r.response)
+            st.info(r.response)
 
 
 prepare_session_state()
