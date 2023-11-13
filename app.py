@@ -28,11 +28,11 @@ def configuration():
     with st.expander("Click to to show/hide configuration options (system prompt, temperature, models)"):
         models = get_models()
         st.session_state.prompt = st.text_area("System prompt", placeholder="Enter here the system prompt", height=150)
-        cols = st.columns(3)
+        cols = st.columns([5, 2, 1])
         with cols[0]:
             st.session_state.models = st.multiselect("Model(s)", models, placeholder="Select one or more models")
         with cols[1]:
-            st.session_state.temperature = st.slider("Temperature", 0.0, 2.0, 0.0)
+            st.session_state.temperature = st.slider("Temperature", 0.0, 2.0, 0.0, )
         with cols[2]:
             st.session_state.max_tokens = st.number_input("Max completion tokens", 1, 20_480, 2048, step=10)
 
@@ -112,10 +112,15 @@ prepare_session_state()
 configuration()
 
 user_input = st.text_area("Enter your request", placeholder="Enter here the user request", height=100)
-st.error("🛑 Do not enter private or sensitive information. What you type here is going to third party servers.")
+st.error(":no_entry_sign: Do not enter private or sensitive information. What you type here is going to external servers.")
+
+read_and_agreed = st.checkbox("There is no private or sensitive information in my request")
 send_button = st.button("Send Request")
 
 if send_button:
+    if not read_and_agreed:
+        st.error("Please confirm that there is no private or sensitive information in your request")
+        st.stop()
     if not st.session_state.models:
         st.error("Please select at least one model")
         st.stop()
