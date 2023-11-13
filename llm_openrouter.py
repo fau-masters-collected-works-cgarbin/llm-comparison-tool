@@ -11,14 +11,13 @@ The main steps to use OpenRouter are:
 Although OpenRouter suports the OpenAI Python client we use an HTTP request to understand the API better and to
 have more control over the request.
 """
+import concurrent.futures
 import os
 import time
-from dataclasses import dataclass
-from dataclasses import field
+from dataclasses import dataclass, field
 
 import dotenv
 import requests
-
 
 _OPENROUTER_API = "https://openrouter.ai/api/v1"
 _REFERER = "http://localhost:3000"
@@ -72,7 +71,7 @@ class LLMCostAndStats:
         return self.native_tokens_prompt + self.native_tokens_completion
 
 
-@dataclass
+@dataclass(frozen=True)
 class Model:
     """Class to hold the model information."""
 
@@ -213,6 +212,39 @@ def chat_completion(model: str, prompt: str, user_input: str, temperature: float
     response.raw_response = payload
 
     return response
+
+
+def chat_completion_multiple(
+    models: list[Model], prompt: str, user_input: str, temperature: float = 0.0
+) -> dict[Model, LLMResponse]:
+    """Fetches all LLM results in parallel to complete them as fast as possible."""
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = {
+            executor.submit(chat_completion, model.id, prompt, user_input, temperature): model for model in models
+        }
+
+        results = {}
+        for future in concurrent.futures.as_completed(futures):
+            model = futures[future]
+            results[model] = future.result()
+
+    return results
+
+
+def cost_and_stats_multiple(llm_responses: dict[Model, LLMResponse]) -> dict[Model, LLMCostAndStats]:
+    """Fetches all LLM costs and stats in parallel to complete them as fast as possible."""
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = {
+            executor.submit(cost_and_stats, llm_response): (model, llm_response)
+            for model, llm_response in llm_responses.items()
+        }
+
+        results = {}
+        for future in concurrent.futures.as_completed(futures):
+            model, _ = futures[future]
+            results[model] = future.result()
+
+    return results
 
 
 def _test():

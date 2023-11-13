@@ -39,15 +39,20 @@ st.write(f"Selected models: {', '.join([model.name for model in st.session_state
 # Send request and display response
 if send_button:
     with st.spinner("Sending request..."):
-        model = st.session_state.models[0]
-        response = llm.chat_completion(model.id, st.session_state.prompt, user_input, st.session_state.temperature)
+        models = st.session_state.models
+        if not isinstance(models, list):
+            models = [models]
+        response = llm.chat_completion_multiple(
+            models, st.session_state.prompt, user_input, st.session_state.temperature
+        )
     with st.spinner("Calculating cost and stats..."):
-        cost_and_stats = llm.cost_and_stats(response)
+        cost_and_stats = llm.cost_and_stats_multiple(response)
 
-    st.markdown(f"### {model.name} response")
-    with st.expander("Click to see the raw response"):
-        st.write("LLM raw response")
-        st.json(response.raw_response, expanded=False)
-        st.write("Cost and stats raw response")
-        st.json(cost_and_stats.raw_response, expanded=False)
-    st.markdown(response.response)
+    for model, response in response.items():
+        st.markdown(f"### {model.name} response")
+        with st.expander("Click to see the raw response"):
+            st.write("LLM raw response")
+            st.json(response.raw_response, expanded=False)
+            st.write("Cost and stats raw response")
+            st.json(cost_and_stats[model].raw_response, expanded=False)
+        st.markdown(response.response)
