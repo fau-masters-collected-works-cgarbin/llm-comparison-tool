@@ -76,13 +76,18 @@ def get_cost_and_stats(response: dict[llm.Model, llm.LLMResponse]) -> dict[llm.M
 
 
 def show_response(response: dict[llm.Model, llm.LLMResponse], cost_and_stats: dict[llm.Model, llm.LLMCostAndStats]):
+    # Sort the response by model name to keep the order consistent
+    response = dict(sorted(response.items(), key=lambda x: x[0].name))
+
     # Show the response side by side by model
     cols = st.columns(len(response))
     for i, (m, r) in enumerate(response.items()):
         with cols[i]:
             st.markdown(f"### {m.name}")
             with st.expander("Click to show/hide the raw response"):
-                st.write("LLM raw response")
+                st.write("LLM raw request data")
+                st.json(r.raw_request, expanded=False)
+                st.write("LLM raw response data")
                 st.json(r.raw_response, expanded=False)
                 st.write("Cost and stats raw response")
                 st.json(cost_and_stats[m].raw_response, expanded=False)

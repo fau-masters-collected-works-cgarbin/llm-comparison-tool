@@ -36,7 +36,9 @@ class LLMResponse:
     user_input: str = ""
     response: str = ""
 
+    raw_request: dict = field(default_factory=dict)
     raw_response: dict = field(default_factory=dict)
+
     elapsed_time: float = 0.0
 
 
@@ -177,6 +179,7 @@ def chat_completion(model: str, prompt: str, user_input: str, temperature: float
             {"role": "user", "content": user_input},
         ],
         "temperature": temperature,
+        "max_tokens": 1024,
     }
 
     headers = {
@@ -196,20 +199,21 @@ def chat_completion(model: str, prompt: str, user_input: str, temperature: float
         exception_text = f"{model}\nHTTP error {http_response.status_code} - {http_response.reason}"
         raise requests.exceptions.HTTPError(exception_text, response=http_response)
 
-    payload = http_response.json()
+    data = http_response.json()
 
     # Record the request and the response
     # We use the keys without checking if they exist because we want to know if the API changes (it will result
     # in a hard failure that makes the change obvious)
     response = LLMResponse()
     response.elapsed_time = elapsed_time
-    response.id = payload["id"]
+    response.id = data["id"]
     response.model = model
     response.prompt = prompt
     response.user_input = user_input
-    response.response = payload["choices"][0]["message"]["content"]
+    response.response = data["choices"][0]["message"]["content"]
 
-    response.raw_response = payload
+    response.raw_request = payload
+    response.raw_response = data
 
     return response
 
