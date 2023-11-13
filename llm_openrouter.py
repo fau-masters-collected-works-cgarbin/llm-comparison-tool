@@ -105,7 +105,6 @@ def _get_api_key() -> str:
 
 def available_models() -> list[Model]:
     """Get the list of models."""
-    # https://openrouter.ai/api/v1/models
     http_response = requests.get(f"{_OPENROUTER_API}/models", timeout=360)
     http_response.raise_for_status()
 
