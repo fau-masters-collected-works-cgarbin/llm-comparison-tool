@@ -212,18 +212,18 @@ def chat_completion(model: str, prompt: str, user_input: str, temperature: float
 
 def _test():
     """Test function - add breakpoints and start under the debugger."""
-    # response = chat_completion(
-    #     "mistralai/mistral-7b-instruct",
-    #     "You are a helpful assistant and an expert in MATLAB.",
-    #     "What is the latest matlab version?",
-    # )
-    # print(f"Response:\n{response}")
-
-    # cost_stats = cost_and_stats(response)
-    # print(f"\nCost and stats:\n{cost_stats}")
-
     models = available_models()
     print(f"\nModels:\n{models}")
+
+    response = chat_completion(
+        "mistralai/mistral-7b-instruct",
+        "You are a helpful assistant and an expert in MATLAB.",
+        "What is the latest matlab version?",
+    )
+    print(f"Response:\n{response}")
+
+    cost_stats = cost_and_stats(response)
+    print(f"\nCost and stats:\n{cost_stats}")
 
 
 if __name__ == "__main__":
