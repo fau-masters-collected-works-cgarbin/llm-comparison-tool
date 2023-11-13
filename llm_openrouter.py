@@ -77,8 +77,8 @@ class Model:
 
     id: str
     name: str
-    pricing_prompt: int
-    pricing_completion: int
+    pricing_prompt: float
+    pricing_completion: float
     context_length: int
     max_completion_tokens: int
     tokenizer: str
@@ -86,7 +86,7 @@ class Model:
 
     # String representation
     def __str__(self):
-        return f"{self.name} ({self.id}) - {self.pricing_prompt} tokens/prompt, {self.pricing_completion} tokens/completion"
+        return f"{self.name} ({self.id})"
 
 
 def _get_api_key() -> str:
@@ -119,8 +119,8 @@ def available_models() -> list[Model]:
         api_data = Model(
             id=item["id"],
             name=item["name"],
-            pricing_prompt=pricing["prompt"],
-            pricing_completion=pricing["completion"],
+            pricing_prompt=float(pricing["prompt"]),
+            pricing_completion=float(pricing["completion"]),
             context_length=item["context_length"],
             tokenizer=architecture["tokenizer"],
             instruct_type=architecture["instruct_type"],
@@ -190,10 +190,11 @@ def chat_completion(model: str, prompt: str, user_input: str, temperature: float
     start_time = time.time()
     http_response = requests.post(url=url, json=payload, headers=headers, timeout=120)
     elapsed_time = time.time() - start_time
-    # We let exceptions propagate for now because this is a developement tool
-    # When/if we let end users (or less technical users) use this code, we handle exceptions more gracefully
-    # Note that the exception will stop the parallel execution of the LLMs, which is ok in our case
-    http_response.raise_for_status()
+
+    # Raise an exception with model name to help debugging
+    if http_response.status_code != 200:
+        exception_text = f"{model}\nHTTP error {http_response.status_code} - {http_response.reason}"
+        raise requests.exceptions.HTTPError(exception_text, response=http_response)
 
     payload = http_response.json()
 

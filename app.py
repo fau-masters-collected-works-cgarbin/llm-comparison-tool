@@ -24,11 +24,38 @@ def prepare_session_state():
 
 
 def configuration():
-    with st.expander("Click to configure prompt and models"):
+    with st.expander("Click to to show/hide configuration options"):
         models = get_models()
-        st.session_state.prompt = st.text_area("Prompt", height=200)
+        st.session_state.prompt = st.text_area("Prompt", placeholder="Enter here the system prompt", height=200)
         st.session_state.temperature = st.slider("Select temperature", 0.0, 2.0, 0.0)
-        st.session_state.models = st.multiselect("Choose LLM(s)", models)
+        st.session_state.models = st.multiselect("Choose model(s)", models, placeholder="Select one or more models")
+        # Order models by name to make them easier to find in the results
+        st.session_state.models = sorted(st.session_state.models, key=lambda x: x.name)
+
+        # Show all modes in a markdown table
+        st.markdown("**Models details**")
+        model_list = (
+            "| Model | ID | Prompt price | Completion price |"
+            "Context length | Max completion tokens | Tokenizer | Instruct type\n"
+            "| --- | --- | ---: | ---: | ---: | ---: | --- | --- |\n"
+        )
+        model_list += "\n".join(
+            [
+                (
+                    f"| {model.name} | {model.id} | {model.pricing_prompt:.10f} | {model.pricing_completion:.10f} |"
+                    f"{model.context_length:,} | {model.max_completion_tokens:,} | {model.tokenizer} |"
+                    f"{model.instruct_type} |"
+                )
+                for model in models
+            ]
+        )
+        st.markdown(model_list)
+    selected_models = (
+        ", ".join([model.name for model in st.session_state.models])
+        if st.session_state.models
+        else "_Click above to select models_"
+    )
+    st.write(f"Selected models: {selected_models}")
 
 
 def get_llm_response(user_input: str) -> dict[llm.Model, llm.LLMResponse]:
@@ -54,7 +81,7 @@ def show_response(response: dict[llm.Model, llm.LLMResponse], cost_and_stats: di
     for i, (m, r) in enumerate(response.items()):
         with cols[i]:
             st.markdown(f"### {m.name}")
-            with st.expander("Click to see the raw response"):
+            with st.expander("Click to show/hide the raw response"):
                 st.write("LLM raw response")
                 st.json(r.raw_response, expanded=False)
                 st.write("Cost and stats raw response")
@@ -64,9 +91,10 @@ def show_response(response: dict[llm.Model, llm.LLMResponse], cost_and_stats: di
                 (
                     "GPT tokens | Native tokens | Cost | Elapsed time |\n"
                     "| --- | --- | --- | --- |\n"
+                    "| _(prompt/completion)_ | _(prompt/completion)_ | _(US $)_ | _(seconds)_ |\n"
                     f"| {c.gpt_tokens_prompt}/{c.gpt_tokens_completion} |"
                     f"{c.native_tokens_prompt}/{c.native_tokens_completion} |"
-                    f"{c.cost} | {r.elapsed_time:.1f}s |"
+                    f"{c.cost:.10f} | {r.elapsed_time:.1f}s |"
                 )
             )
             st.markdown(r.response)
@@ -74,9 +102,8 @@ def show_response(response: dict[llm.Model, llm.LLMResponse], cost_and_stats: di
 
 prepare_session_state()
 configuration()
-st.write(f"Selected models: {', '.join([model.name for model in st.session_state.models])}")
 
-user_input = st.text_area("Enter your request", height=100)
+user_input = st.text_area("Enter your request", placeholder="Enter here the user request", height=100)
 st.error("🛑 Do not enter private or sensitive information. What you type here is going to third party servers.")
 send_button = st.button("Send Request")
 
