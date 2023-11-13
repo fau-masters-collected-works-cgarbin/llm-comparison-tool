@@ -13,16 +13,15 @@ def get_models():
 
 
 def prepare_session_state():
-    if "key" not in st.session_state:
-        st.session_state.key = ""
-    if "prompt" not in st.session_state:
-        st.session_state.prompt = ""
-    if "temperature" not in st.session_state:
-        st.session_state.temperature = 0.0
-    if "max_tokens" not in st.session_state:
-        st.session_state.max_tokens = 2048
-    if "models" not in st.session_state:
-        st.session_state.models = []
+    session_vars = { # Default values
+        "prompt": "",
+        "temperature": 0.0,
+        "max_tokens": 2048,
+        "models": [],
+    }
+    for var in session_vars:
+        if var not in st.session_state:
+            st.session_state[var] = session_vars[var]
 
 
 def configuration():
