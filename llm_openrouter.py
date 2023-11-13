@@ -85,6 +85,10 @@ class Model:
     tokenizer: str
     instruct_type: str
 
+    # String representation
+    def __str__(self):
+        return f"{self.name} ({self.id}) - {self.pricing_prompt} tokens/prompt, {self.pricing_completion} tokens/completion"
+
 
 def _get_api_key() -> str:
     """Get the API key from the environment."""
@@ -124,6 +128,7 @@ def available_models() -> list[Model]:
             instruct_type=architecture["instruct_type"],
             max_completion_tokens=top_provider["max_completion_tokens"],
         )
+
         api_data_list.append(api_data)
 
     return api_data_list
