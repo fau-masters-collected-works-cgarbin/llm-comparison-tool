@@ -12,32 +12,26 @@ def get_models():
     return models
 
 
+def prepare_session_state():
+    if "key" not in st.session_state:
+        st.session_state.key = ""
+    if "prompt" not in st.session_state:
+        st.session_state.prompt = ""
+    if "temperature" not in st.session_state:
+        st.session_state.temperature = 0.0
+    if "models" not in st.session_state:
+        st.session_state.models = []
+
+
 def configuration():
     with st.expander("Click to configure prompt and models"):
-        if "key" not in st.session_state:
-            st.session_state.key = ""
-        if "prompt" not in st.session_state:
-            st.session_state.prompt = ""
-        if "temperature" not in st.session_state:
-            st.session_state.temperature = 0.0
-        if "models" not in st.session_state:
-            st.session_state.models = []
         models = get_models()
         st.session_state.prompt = st.text_area("Prompt", height=200)
         st.session_state.temperature = st.slider("Select temperature", 0.0, 2.0, 0.0)
         st.session_state.models = st.multiselect("Choose LLM(s)", models)
 
 
-configuration()
-
-# Input field for the request and send button
-user_input = st.text_area("Enter your request to the LLM", height=150)
-send_button = st.button("Send Request")
-
-st.write(f"Selected models: {', '.join([model.name for model in st.session_state.models])}")
-
-# Send request and display response
-if send_button:
+def get_llm_response(user_input: str) -> dict[llm.Model, llm.LLMResponse]:
     with st.spinner("Sending request..."):
         models = st.session_state.models
         if not isinstance(models, list):
@@ -45,8 +39,25 @@ if send_button:
         response = llm.chat_completion_multiple(
             models, st.session_state.prompt, user_input, st.session_state.temperature
         )
+    return response
+
+
+def get_cost_and_stats(response: dict[llm.Model, llm.LLMResponse]) -> dict[llm.Model, llm.LLMCostAndStats]:
     with st.spinner("Calculating cost and stats..."):
         cost_and_stats = llm.cost_and_stats_multiple(response)
+    return cost_and_stats
+
+
+prepare_session_state()
+configuration()
+st.write(f"Selected models: {', '.join([model.name for model in st.session_state.models])}")
+
+user_input = st.text_area("Enter your request to the LLM", height=150)
+send_button = st.button("Send Request")
+
+if send_button:
+    response = get_llm_response(user_input)
+    cost_and_stats = get_cost_and_stats(response)
 
     for model, response in response.items():
         st.markdown(f"### {model.name} response")
