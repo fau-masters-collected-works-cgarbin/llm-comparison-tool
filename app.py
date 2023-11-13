@@ -1,15 +1,15 @@
 import streamlit as st
 import llm_openrouter as llm
 
+st.set_page_config(page_title="Multi LLM Test Tool", layout="wide")
+st.title("Multi LLM Test Tool")
+
 
 @st.cache_data
 def get_models():
     models = llm.available_models()
     models = sorted(models, key=lambda x: x.name)
     return models
-
-
-st.set_page_config(page_title="LLM Selector", layout="wide")
 
 
 def configuration():
