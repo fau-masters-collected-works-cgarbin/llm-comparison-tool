@@ -49,14 +49,17 @@ def get_cost_and_stats(response: dict[llm.Model, llm.LLMResponse]) -> dict[llm.M
 
 
 def show_response(response: dict[llm.Model, llm.LLMResponse], cost_and_stats: dict[llm.Model, llm.LLMCostAndStats]):
-    for m, r in response.items():
-        st.markdown(f"### {m.name} response")
-        with st.expander("Click to see the raw response"):
-            st.write("LLM raw response")
-            st.json(r.raw_response, expanded=False)
-            st.write("Cost and stats raw response")
-            st.json(cost_and_stats[m].raw_response, expanded=False)
-        st.markdown(r.response)
+    # Show the response side by side by model
+    cols = st.columns(len(response))
+    for i, (m, r) in enumerate(response.items()):
+        with cols[i]:
+            st.markdown(f"### {m.name}")
+            with st.expander("Click to see the raw response"):
+                st.write("LLM raw response")
+                st.json(r.raw_response, expanded=False)
+                st.write("Cost and stats raw response")
+                st.json(cost_and_stats[m].raw_response, expanded=False)
+            st.markdown(r.response)
 
 
 prepare_session_state()
