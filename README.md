@@ -2,9 +2,9 @@
 
 This project allows us to test prompts against multiple large language models and compare the results.
 
-It uses [OpenRouter](https://openrouter.ai/) to connect to different models. Some models are free, others aren't. If you decide to use paud models, OpenRouter has a credit limit to avoid surprise bills.
+It uses [OpenRouter](https://openrouter.ai/) to connect to different models. Some models are free, others aren't. If you decide to use paid models, OpenRouter has a credit limit to avoid surprise bills.
 
-**WARNING**: Do not use this project for private and confidential information. OpenRouter connects to different providers. I cannot vouche for OpenRouter's and providers' privacy policies. Assume that what you send to OpenRouter is public and act accordingly.
+**WARNING**: Do not use this project for private and confidential information. OpenRouter connects to different providers. I cannot vouch for OpenRouter's and providers' privacy policies. Assume that what you send to OpenRouter is public and act accordingly.
 
 ## Quick get-started guide
 
@@ -45,7 +45,7 @@ pip install -r requirements.txt
 
 The code uses [OpenRouter](https://openrouter.ai/) to access multiple models.
 
-If you already have an OpenRouter account, create an API key [here](https://openrouter.ai/keys). If you don't have an account, create one [here](https://openrouter.ai/), then add credits and create the API key.
+If you already have an OpenRouter account, create an API key [here](https://openrouter.ai/keys). If you don't have an account, create one [here](https://openrouter.ai/), then create the API key. Optionally, add credits if you plan to use paid models.
 
 Once you have the API key, create a `.env` file in the project root directory with the following content.
 
