@@ -48,6 +48,17 @@ def get_cost_and_stats(response: dict[llm.Model, llm.LLMResponse]) -> dict[llm.M
     return cost_and_stats
 
 
+def show_response(response: dict[llm.Model, llm.LLMResponse], cost_and_stats: dict[llm.Model, llm.LLMCostAndStats]):
+    for m, r in response.items():
+        st.markdown(f"### {m.name} response")
+        with st.expander("Click to see the raw response"):
+            st.write("LLM raw response")
+            st.json(r.raw_response, expanded=False)
+            st.write("Cost and stats raw response")
+            st.json(cost_and_stats[m].raw_response, expanded=False)
+        st.markdown(r.response)
+
+
 prepare_session_state()
 configuration()
 st.write(f"Selected models: {', '.join([model.name for model in st.session_state.models])}")
@@ -58,12 +69,4 @@ send_button = st.button("Send Request")
 if send_button:
     response = get_llm_response(user_input)
     cost_and_stats = get_cost_and_stats(response)
-
-    for model, response in response.items():
-        st.markdown(f"### {model.name} response")
-        with st.expander("Click to see the raw response"):
-            st.write("LLM raw response")
-            st.json(response.raw_response, expanded=False)
-            st.write("Cost and stats raw response")
-            st.json(cost_and_stats[model].raw_response, expanded=False)
-        st.markdown(response.response)
+    show_response(response, cost_and_stats)
