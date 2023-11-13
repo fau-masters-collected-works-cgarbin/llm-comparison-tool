@@ -47,16 +47,12 @@ def configuration():
             "Context length | Max completion tokens | Tokenizer | Instruct type\n"
             "| --- | --- | ---: | ---: | ---: | ---: | --- | --- |\n"
         )
-        model_list += "\n".join(
-            [
-                (
-                    f"| {model.name} | {model.id} | {model.pricing_prompt:.10f} | {model.pricing_completion:.10f} |"
-                    f"{model.context_length:,} | {model.max_completion_tokens:,} | {model.tokenizer} |"
-                    f"{model.instruct_type} |"
-                )
-                for model in models
-            ]
-        )
+        for model in models:
+            model_list += (
+                f"| {model.name} | {model.id} | {model.pricing_prompt:.10f} | {model.pricing_completion:.10f} |"
+                f"{model.context_length:,} | {model.max_completion_tokens:,} | {model.tokenizer} |"
+                f"{model.instruct_type} |\n"
+            )
         st.markdown(model_list)
     selected_models = (
         ", ".join([model.name for model in st.session_state.models])
