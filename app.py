@@ -24,11 +24,11 @@ def prepare_session_state():
 
 
 def configuration():
-    with st.expander("Click to to show/hide configuration options"):
+    with st.expander("Click to to show/hide configuration options (system prompt, temperature, models)"):
         models = get_models()
-        st.session_state.prompt = st.text_area("Prompt", placeholder="Enter here the system prompt", height=200)
+        st.session_state.prompt = st.text_area("System prompt", placeholder="Enter here the system prompt", height=200)
         st.session_state.temperature = st.slider("Select temperature", 0.0, 2.0, 0.0)
-        st.session_state.models = st.multiselect("Choose model(s)", models, placeholder="Select one or more models")
+        st.session_state.models = st.multiselect("Select model(s)", models, placeholder="Select one or more models")
         # Order models by name to make them easier to find in the results
         st.session_state.models = sorted(st.session_state.models, key=lambda x: x.name)
 
@@ -108,6 +108,13 @@ st.error("🛑 Do not enter private or sensitive information. What you type here
 send_button = st.button("Send Request")
 
 if send_button:
+    if not st.session_state.models:
+        st.error("Please select at least one model")
+        st.stop()
+    if not user_input:
+        st.error("Please enter a request")
+        st.stop()
+
     response = get_llm_response(user_input)
     cost_and_stats = get_cost_and_stats(response)
     show_response(response, cost_and_stats)
