@@ -13,8 +13,8 @@ def get_models():
 
 
 def prepare_session_state():
-    session_vars = { # Default values
-        "prompt": "",
+    session_vars = {  # Default values
+        "prompt": "You are a helpful assistant.",
         "temperature": 0.0,
         "max_tokens": 2048,
         "models": [],
@@ -32,7 +32,7 @@ def configuration():
         with cols[0]:
             st.session_state.models = st.multiselect("Model(s)", models, placeholder="Select one or more models")
         with cols[1]:
-            st.session_state.temperature = st.slider("Temperature", 0.0, 2.0, 0.0, )
+            st.session_state.temperature = st.slider("Temperature", 0.0, 2.0, 0.0)
         with cols[2]:
             st.session_state.max_tokens = st.number_input("Max completion tokens", 1, 20_480, 2048, step=10)
 
@@ -112,7 +112,9 @@ prepare_session_state()
 configuration()
 
 user_input = st.text_area("Enter your request", placeholder="Enter here the user request", height=100)
-st.error(":no_entry_sign: Do not enter private or sensitive information. What you type here is going to external servers.")
+st.error(
+    ":no_entry_sign: Do not enter private or sensitive information. What you type here is going to external servers."
+)
 
 read_and_agreed = st.checkbox("There is no private or sensitive information in my request")
 send_button = st.button("Send Request")
