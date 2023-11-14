@@ -1,0 +1,13 @@
+# We don't copy the entire directory in the Docker build, but we have a .dockerignore file
+# for added protection, just in case we make a mistake in a COPY command.
+
+# Ensure we never copy keys
+.env
+
+# Do not copy the Python virtual environment
+venv
+
+.git
+*.md
+__pycache__
+.ruff_cache

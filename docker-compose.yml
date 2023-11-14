@@ -1,0 +1,11 @@
+version: '3'
+services:
+  llm-comparison:
+    image: llm-comparison
+    restart: always
+    # The local directory has the config files (see README)
+    volumes:
+      - .:/app/config
+    ports:
+      # Must match the Dockerfile
+      - 8501:8501

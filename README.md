@@ -17,9 +17,14 @@ source venv/bin/activate
 streamlit run app.py
 ```
 
-## Modifying and testing the code
+Open the URL shown in the terminal in a browser.
 
-TBD
+## Running as a container
+
+1. Build the container: `docker build --progress=plain -t llm-comparison .`
+2. Start the container: `docker compose up -d`
+3. Open a browser window to <http://machine_address:8501> (if running locally: <http://localhost:8501>)
+4. Stop the container when done: `docker compose down`
 
 ## Preparing the environment
 
