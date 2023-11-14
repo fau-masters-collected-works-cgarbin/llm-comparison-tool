@@ -35,6 +35,7 @@ class LLMResponse:
     prompt: str = ""
     user_input: str = ""
     response: str = ""
+    finish_reason: str = ""
 
     raw_request: dict = field(default_factory=dict)
     raw_response: dict = field(default_factory=dict)
@@ -213,6 +214,12 @@ def chat_completion(
     response.prompt = prompt
     response.user_input = user_input
     response.response = data["choices"][0]["message"]["content"]
+
+    # Not all responses provide a finish reason
+    # It's uncler to me if this a limitation of the API or if it's a limitation of the model
+    # OpenRouter says "Note that finish_reason will vary depending on the model provider.
+    # Source: https://openrouter.ai/docs#quick-start
+    response.finish_reason = data.get("choices", [{}])[0].get("finish_reason", "not available")
 
     response.raw_request = payload
     response.raw_response = data
