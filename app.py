@@ -1,4 +1,8 @@
+import datetime
+import json
+
 import streamlit as st
+
 import llm_openrouter as llm
 
 st.set_page_config(page_title="Multi LLM Test Tool", layout="wide")
@@ -18,6 +22,8 @@ def prepare_session_state():
         "temperature": 0.0,
         "max_tokens": 2048,
         "models": [],
+        "response": {},
+        "cost_and_stats": {},
     }
     for var in session_vars:
         if var not in st.session_state:
@@ -129,6 +135,28 @@ if send_button:
         st.error("Please enter a request")
         st.stop()
 
-    response = get_llm_response(user_input)
-    cost_and_stats = get_cost_and_stats(response)
-    show_response(response, cost_and_stats)
+    # Because the download button (below) reruns the entire page (as all of the Streamlit widgets do), we need to
+    # save the results in the session state to show them again after the download button is clicked
+    # References:
+    #  - https://github.com/streamlit/streamlit/issues/3832
+    #  - https://discuss.streamlit.io/t/download-button-reloads-app-and-results-output-is-gone-and-need-to-re-run/51467
+    st.session_state.response = get_llm_response(user_input)
+    st.session_state.cost_and_stats = get_cost_and_stats(st.session_state.response)
+
+if st.session_state.response:
+    show_response(st.session_state.response, st.session_state.cost_and_stats)
+
+    # Let the users download the results in JSON format
+    response_json = {}
+    for model, response in st.session_state.response.items():
+        response_json[model.name] = {
+            "response": response.to_dict(),
+            "cost_and_stats": st.session_state.cost_and_stats[model].to_dict(),
+        }
+    response_json = json.dumps(response_json, indent=4)
+    st.download_button(
+        label="Download JSON File",
+        data=response_json,
+        file_name=f"llm-comparison-{datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}",
+        mime="application/json",
+    )
