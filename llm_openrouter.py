@@ -15,6 +15,7 @@ import concurrent.futures
 import os
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 
 import dotenv
 import requests
@@ -94,8 +95,15 @@ class Model:
 
 def _get_api_key() -> str:
     """Get the API key from the environment."""
+    # Use the "config" dir it it's present, or the current dir otherwise
+    # The "config" dir is mounted when running as a container
+    config_dir = Path("config")
+    if config_dir.is_dir():
+        dotenv.load_dotenv(dotenv_path=config_dir / ".env", override=True)
+    else:
+        dotenv.load_dotenv(override=True)
+
     # Try an OpenAI key, fall back to OpenRouter key if not found
-    dotenv.load_dotenv()
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         api_key = os.getenv("OPENROUTER_API_KEY")
