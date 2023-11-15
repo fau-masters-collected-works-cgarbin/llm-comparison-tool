@@ -14,7 +14,7 @@ have more control over the request.
 import concurrent.futures
 import os
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 from pathlib import Path
 
 import dotenv
@@ -42,6 +42,9 @@ class LLMResponse:
     raw_response: dict = field(default_factory=dict)
 
     elapsed_time: float = 0.0
+
+    def to_dict(self):
+        return asdict(self)
 
 
 @dataclass
@@ -73,6 +76,10 @@ class LLMCostAndStats:
     @property
     def native_tokens_total(self):
         return self.native_tokens_prompt + self.native_tokens_completion
+
+    def to_dict(self):
+        return asdict(self)
+
 
 
 @dataclass(frozen=True)
