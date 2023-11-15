@@ -14,7 +14,7 @@ def get_models():
 
 def prepare_session_state():
     session_vars = {  # Default values
-        "prompt": "You are a helpful assistant.",
+        "prompt": "",
         "temperature": 0.0,
         "max_tokens": 2048,
         "models": [],
@@ -27,7 +27,12 @@ def prepare_session_state():
 def configuration():
     with st.expander("Click to to show/hide configuration options (system prompt, temperature, models)"):
         models = get_models()
-        st.session_state.prompt = st.text_area("System prompt", placeholder="Enter here the system prompt", height=150)
+        st.session_state.prompt = st.text_area(
+            "System prompt",
+            value="You are a helpful assistant.",
+            placeholder="Enter here the system prompt",
+            height=150,
+        )
         cols = st.columns([5, 2, 1])
         with cols[0]:
             st.session_state.models = st.multiselect("Model(s)", models, placeholder="Select one or more models")
@@ -36,7 +41,8 @@ def configuration():
         with cols[2]:
             st.session_state.max_tokens = st.number_input("Max completion tokens", 1, 20_480, 2048, step=10)
 
-        # Order models by name to make them easier to find in the results
+        # Models are listed in the order the user selected them
+        # Sort the selected list by name to make them easier to find in the results
         st.session_state.models = sorted(st.session_state.models, key=lambda x: x.name)
 
         # Show all modes in a markdown table

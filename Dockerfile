@@ -21,6 +21,8 @@ USER appuser
 ENV PATH="/home/appuser/.local/bin:${PATH}"
 
 # Install packages globally, not under the USER, to make them available in the PATH
+# Note that we are installing dev packages to make simple for now
+# If the list of dev packages grows we should split the requirements.txt file
 COPY requirements.txt .
 # Use only the main dependencies
 RUN pip3 install --no-cache-dir -r requirements.txt
