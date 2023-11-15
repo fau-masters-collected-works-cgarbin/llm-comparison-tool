@@ -42,7 +42,7 @@ def configuration():
     with cols[0]:
         st.session_state.models = st.multiselect("Model(s)", models, placeholder="Select one or more models")
     with cols[1]:
-        st.session_state.temperature = st.slider("Temperature", 0.0, 2.0, 0.0)
+        st.session_state.temperature = st.slider("Temperature", 0.0, 1.0, 0.0)
     with cols[2]:
         st.session_state.max_tokens = st.number_input("Max completion tokens", 1, 20_480, 2048, step=10)
 
