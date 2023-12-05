@@ -2,6 +2,13 @@
 
 This project allows us to test prompts against multiple large language models and compare the results.
 
+1. Select models to compare.
+1. Enter a question or prompt.
+1. Compare the results.
+
+<!-- markdownlint-disable MD033 -->
+<img src="pics/overview.png" alt="Overview" width="250"/>
+
 It uses [OpenRouter](https://openrouter.ai/) to connect to [different models](https://openrouter.ai/docs#models). Some models are free, others aren't. If you decide to use paid models, OpenRouter has a credit limit to avoid surprise bills.
 
 **WARNING**: Do not use this project for private and confidential information. OpenRouter connects to different providers. I cannot vouch for OpenRouter's and providers' privacy policies. Assume that what you send to OpenRouter is public and act accordingly.
