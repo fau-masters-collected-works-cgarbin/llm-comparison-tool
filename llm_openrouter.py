@@ -81,7 +81,6 @@ class LLMCostAndStats:
         return asdict(self)
 
 
-
 @dataclass(frozen=True)
 class Model:
     """Class to hold the model information."""
@@ -133,6 +132,10 @@ def available_models() -> list[Model]:
         pricing = item["pricing"]
         architecture = item["architecture"]
         top_provider = item["top_provider"]
+
+        # Adjust some fields to make sure the upper layers can use them without worrying about the details
+        if top_provider["max_completion_tokens"] is None:
+            top_provider["max_completion_tokens"] = 0
 
         api_data = Model(
             id=item["id"],
